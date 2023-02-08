@@ -28,7 +28,7 @@ $ go build .
 
 The tool uses the following flags:
 
-* -q or --quality: Specify the quality of the compressed image, ranging from 0-100.
+* -q or --quality: Specify the quality of the compressed image.
 * -i or --input: Specify the input file or URL.
 * -o or --output: Specify the path to store the output image.
 
@@ -42,6 +42,22 @@ Example usage:
 ```
 
 This will compress image.jpg with a quality of 50 and output the result to compressed.jpg.
+
+# Test
+To test the cli using different test cases 
+1. cd into test folder using ```cd test```.
+2. To run all test file all at once use 
+```
+go test
+```
+# Supported Image Formats
+
+The tool supports both JPEG and PNG image formats. If the input image format is not supported, the tool will return an error.
+
+# Contributing
+If you would like to contribute to the project, please fork the repository and make your changes. Once you have finished your changes, please submit a pull request for review.
+
+
 
 
 
