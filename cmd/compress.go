@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/jpeg"
+	"time"
 
 	"image/png"
 
@@ -45,16 +46,39 @@ func CompressImage(input string, output string, quality int) error {
 		return err
 	}
 	defer f.Close()
+	inputFile, err := http.Get(input)
+	if err != nil {
+		return err
+	}
+	defer inputFile.Body.Close()
+	inputSize := inputFile.ContentLength
+	fmt.Println("Input image size:", inputSize, "bytes")
 	err = encodeImage(img, format, f, quality)
 	if err != nil {
 		return err
 	}
+	outputFile, err := os.Open(output)
+	if err != nil {
+		return err
+	}
+	defer outputFile.Close()
+	outputInfo, err := outputFile.Stat()
+	if err != nil {
+		return err
+	}
+	outputSize := outputInfo.Size()
+	fmt.Println("Output image size:", outputSize, "bytes")
+
 	return nil
+
 }
 
 func openImage(input string) (image.Image, string, error) {
 	if input[:4] == "http" {
-		response, err := http.Get(input)
+		client := &http.Client{
+			Timeout: time.Second * 10,
+		}
+		response, err := client.Get(input)
 		if err != nil {
 			return nil, "", err
 		}
@@ -98,9 +122,10 @@ func encodeImage(img image.Image, format string, output io.Writer, quality int) 
 }
 
 func init() {
-	compressCmd.Flags().IntVarP(&quality, "quality", "q", 0, "image compression ranging from 0-100")
+	compressCmd.Flags().IntVarP(&quality, "quality", "q", 0, "image compression value")
 	compressCmd.Flags().StringVarP(&input, "input", "i", "", "input file or url")
 	compressCmd.Flags().StringVarP(&output, "output", "o", "", "compressed image path where you want to store the output image")
 	compressCmd.MarkFlagRequired("input")
+	compressCmd.MarkFlagRequired("quality")
 	rootCmd.AddCommand(compressCmd)
 }
