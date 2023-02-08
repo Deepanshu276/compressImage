@@ -1,0 +1,5 @@
+TEST_DIR = test
+
+.PHONY: test
+test:
+	ginkgo -r --flakeAttempts=2 $(TEST_DIR)
