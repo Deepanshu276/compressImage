@@ -24,7 +24,7 @@ Build and copy ```imgCompress ``` to your $GOPATH/bin:
 $ go build .
 ```
 
-#Usage
+# Usage
 
 The tool uses the following flags:
 
