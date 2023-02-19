@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strconv"
 
@@ -16,7 +17,7 @@ func ShowUI() {
 
 	inputField := tview.NewInputField().
 		SetLabel("Input Image/URL: ").
-		SetPlaceholder("Enter the input image path or URL")
+		SetPlaceholder("Enter the input imag`e path or URL")
 
 	outputField := tview.NewInputField().
 		SetLabel("Output Image Path: ").
@@ -51,6 +52,9 @@ func ShowUI() {
 			showError(app, "Invalid resize percentage")
 			return
 		}
+		if output != "" && output[0] == '~' {
+			output, _ = filepath.Abs(filepath.Join(os.Getenv("HOME"), output[1:]))
+		}
 
 		if resize < 30 {
 			modal := tview.NewModal().
@@ -59,15 +63,25 @@ func ShowUI() {
 				SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 					if buttonIndex == 0 {
 						if isURL(input) {
-							err = cmd.CompressImage(input, output, resize)
+							if output != "" {
+								err = cmd.CompressImage(input, output, resize)
+							} else {
+								err = cmd.CompressImage(input, "", resize)
+							}
+							//err = cmd.CompressImage(input, output, resize)
 						} else {
 							absInput, err := filepath.Abs(filepath.Join("..", input))
 							if err != nil {
 								showError(app, err.Error())
 								return
 							}
+							if output != "" {
+								err = cmd.CompressImage(filepath.Join(absInput), output, resize)
+							} else {
+								err = cmd.CompressImage(filepath.Join(absInput), "", resize)
+							}
 
-							err = cmd.CompressImage(filepath.Join(absInput), output, resize)
+							//err = cmd.CompressImage(filepath.Join(absInput), output, resize)
 
 							if err != nil {
 								showError(app, err.Error())
@@ -87,7 +101,12 @@ func ShowUI() {
 			}
 		} else {
 			if isURL(input) {
-				err = cmd.CompressImage(input, output, resize)
+				if output != "" {
+					err = cmd.CompressImage(input, output, resize)
+				} else {
+					err = cmd.CompressImage(input, "", resize)
+				}
+				//err = cmd.CompressImage(input, output, resize)
 			} else {
 				absInput, err := filepath.Abs(filepath.Join("..", input))
 				if err != nil {
@@ -101,6 +120,16 @@ func ShowUI() {
 					showError(app, err.Error())
 					return
 
+				}
+				if output != "" {
+					err = cmd.CompressImage(absInput, output, resize)
+				} else {
+					err = cmd.CompressImage(absInput, "", resize)
+				}
+
+				if err != nil {
+					showError(app, err.Error())
+					return
 				}
 			}
 			showMessage(app, "Image compressed successfully")
