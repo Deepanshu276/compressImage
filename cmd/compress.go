@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"image"
 	"image/jpeg"
-	"time"
-
 	"image/png"
+	"path/filepath"
+	"time"
 
 	"io"
 	"net/http"
@@ -15,66 +15,67 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var quality int
+var resize int
 var input string
 var output string
 
+// compressCmd represents the sub command called with the base command
 var compressCmd = &cobra.Command{
 	Use:   "compress",
 	Short: "Compress image with specified quality",
-	Long:  `Compress image with specified quality`,
+	Long: `This is a command line tool for resizing the images.
+			To create a compress command it takes in an input file or URL and compresses the image
+			with a specified quality, then outputs the compressed image to a specified path.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := CompressImage(input, output, quality)
+
+		err := CompressImage(filepath.Join(filepath.Dir(input), filepath.Base(input)), output, resize)
+		//err := CompressImage(input, output, resize)
+
 		if err != nil {
 			fmt.Println(err)
-		} else {
-			//fmt.Println("Image compression successful")
-			fmt.Println("Compressed image stored at", output)
+		} else if output == "" {
+			fmt.Println("Compressed image stored at Pictures Directory")
 
+		} else {
+			fmt.Println("Compressed image stored at", output)
 		}
+		os.Exit(0)
 
 	},
 }
 
-func CompressImage(input string, output string, quality int) error {
-	img, format, err := openImage(input)
+// Logic to compress the code
+func CompressImage(input string, output string, resize int) error {
+
+	img, format, err := OpenImage(input)
 	if err != nil {
 		return err
 	}
+
+	//If output path is not specified
+	if output == "" {
+		//Join the Pictures folder with the file name
+		output = filepath.Join(os.Getenv("HOME"), "Pictures", filepath.Base(input))
+	}
+
+	//Create creates or truncates the named file. If the file already exists, it is truncated. If the file does not exist, it is created
 	f, err := os.Create(output)
 	if err != nil {
 		return err
 	}
+	//Close closes the File, rendering it unusable for I/O.
 	defer f.Close()
-	inputFile, err := http.Get(input)
+	err = encodeImage(img, format, f, resize)
 	if err != nil {
 		return err
 	}
-	defer inputFile.Body.Close()
-	inputSize := inputFile.ContentLength
-	fmt.Println("Input image size:", inputSize, "bytes")
-	err = encodeImage(img, format, f, quality)
-	if err != nil {
-		return err
-	}
-	outputFile, err := os.Open(output)
-	if err != nil {
-		return err
-	}
-	defer outputFile.Close()
-	outputInfo, err := outputFile.Stat()
-	if err != nil {
-		return err
-	}
-	outputSize := outputInfo.Size()
-	fmt.Println("Output image size:", outputSize, "bytes")
-
 	return nil
 
 }
 
-func openImage(input string) (image.Image, string, error) {
+func OpenImage(input string) (image.Image, string, error) {
 	if input[:4] == "http" {
+		//if request is not served with the provided time we we get the timeout error
 		client := &http.Client{
 			Timeout: time.Second * 10,
 		}
@@ -89,21 +90,25 @@ func openImage(input string) (image.Image, string, error) {
 		}
 		return img, format, nil
 	}
+	//Open the named file for reading
 	f, err := os.Open(input)
 	if err != nil {
 		return nil, "", err
 	}
 	defer f.Close()
+	//Decode decodes an image that has been encoded in a registered format
 	img, format, err := image.Decode(f)
 	if err != nil {
 		return nil, "", err
 	}
 	return img, format, nil
+
 }
 
-func encodeImage(img image.Image, format string, output io.Writer, quality int) error {
+// encoding the image will only support jpeg and png
+func encodeImage(img image.Image, format string, output io.Writer, resize int) error {
 	var opt jpeg.Options
-	opt.Quality = quality
+	opt.Quality = resize
 	switch format {
 	case "jpeg":
 		err := jpeg.Encode(output, img, &opt)
@@ -121,11 +126,16 @@ func encodeImage(img image.Image, format string, output io.Writer, quality int) 
 	return nil
 }
 
+// Function to check if the input is a URL or not
+
+// Here you will define your flags and configuration settings.
+// Cobra supports persistent flags, which, if defined here,
+// will be global for your application.
+
 func init() {
-	compressCmd.Flags().IntVarP(&quality, "quality", "q", 0, "image compression value")
-	compressCmd.Flags().StringVarP(&input, "input", "i", "", "input file or url")
+	compressCmd.Flags().IntVarP(&resize, "resize", "r", 0, "image compression number between [0,100]")
+	compressCmd.Flags().StringVarP(&input, "input", "i", "", "input image or url")
 	compressCmd.Flags().StringVarP(&output, "output", "o", "", "compressed image path where you want to store the output image")
 	compressCmd.MarkFlagRequired("input")
-	compressCmd.MarkFlagRequired("quality")
 	rootCmd.AddCommand(compressCmd)
 }

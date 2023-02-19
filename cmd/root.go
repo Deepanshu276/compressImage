@@ -11,17 +11,9 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "compressImage",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+	Use: "compressImage",
+	Short: `This is a command line tool for compressing images. To create a compress command this takes in an input file or URL and 
+	compresses the image with a specified size, then outputs the compressed image to a specified path.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
